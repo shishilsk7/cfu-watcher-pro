@@ -16,7 +16,8 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
 def evaluate_and_save(true, pred, out_prefix):
     mae = mean_absolute_error(true, pred)
-    rmse = mean_squared_error(true, pred, squared=False)
+    # Use sqrt of MSE instead of `squared=False` for compatibility
+    rmse = float(np.sqrt(mean_squared_error(true, pred)))
     r2 = r2_score(true, pred)
     metrics = {"MAE": float(mae), "RMSE": float(rmse), "R2": float(r2)}
     with open(out_prefix + "_metrics.json", "w") as f:
