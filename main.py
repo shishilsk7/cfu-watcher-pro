@@ -74,7 +74,7 @@ async def get_metrics():
 @app.get("/forecast")
 def forecast_endpoint(horizon: int = 7):
 
-    UNIVERSAL_THRESHOLD = 85000  # Global safety threshold
+    DEPT_THRESHOLDS = {"AIML": 85000, "Biotech": 90000}  # Per-department safety thresholds
 
     # Load dataset
     df = pd.read_csv(DATA_PATH)
@@ -90,8 +90,8 @@ def forecast_endpoint(horizon: int = 7):
         if dept_df.empty:
             continue  # No rows for this department
 
-        # Apply universal threshold
-        threshold = UNIVERSAL_THRESHOLD
+        # Apply per-department threshold
+        threshold = DEPT_THRESHOLDS.get(dept, 85000)
 
         # Last WINDOW_SIZE rows for multi-step forecasting
         last_rows = dept_df.tail(WINDOW_SIZE)
