@@ -82,7 +82,7 @@ def generate_for_department(dept_df: pd.DataFrame, dept_stats: DeptStats, n_rows
         next_cfu = float(np.clip(cfu_candidate, cfu_low, cfu_high))
 
         # Colonies: ±2%
-        colonies_candidate = prev_colonies * (1.0 + signed_noise(0.0, 0.02))
+        colonies_candidate = prev_colonies * (1.0 + signed_noise(0.02, 0.02))
         next_colonies = max(0.0, colonies_candidate)
 
         # Temperature: ±0.5 of last value
@@ -137,7 +137,7 @@ def add_windows_for_group(group_df, x_scaler, y_scaler, window_size=WINDOW_SIZE,
     return X, y
 
 
-def build_windows(df, x_scaler, y_scaler):
+def build_windows(df, x_scaler, y_scaler, dataset_name: str):
     X_all, y_all = [], []
     for dept in DEPARTMENTS:
         dept_df = df[df["Sample"] == dept].sort_values("Day")
@@ -150,8 +150,8 @@ def build_windows(df, x_scaler, y_scaler):
 
     if len(X_np) == 0:
         raise ValueError(
-            "No windows generated. Check that each department has at least "
-            "WINDOW_SIZE + HORIZON rows in both augmented and original datasets."
+            f"No windows generated for '{dataset_name}'. Check that each department has at least "
+            f"{WINDOW_SIZE + HORIZON} rows (WINDOW_SIZE={WINDOW_SIZE}, HORIZON={HORIZON})."
         )
 
     return X_np, y_np
@@ -262,8 +262,8 @@ def main():
     x_scaler = MinMaxScaler().fit(scaler_base[FEATURES].astype(float).values)
     y_scaler = MinMaxScaler().fit(scaler_base[[TARGET]].astype(float).values)
 
-    X_train, y_train = build_windows(augmented_df, x_scaler, y_scaler)
-    X_val, y_val = build_windows(original_df, x_scaler, y_scaler)
+    X_train, y_train = build_windows(augmented_df, x_scaler, y_scaler, dataset_name="augmented")
+    X_val, y_val = build_windows(original_df, x_scaler, y_scaler, dataset_name="original")
 
     results = {}
     for model_name in ["lstm", "gru"]:
