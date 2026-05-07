@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Navbar } from "@/components/dashboard/Navbar";
 import { ControlsBar } from "@/components/dashboard/ControlsBar";
 import { RiskSummaryCards } from "@/components/dashboard/RiskSummaryCards";
@@ -13,6 +13,7 @@ const Index = () => {
   const [horizon, setHorizon] = useState(7);
   const [dept, setDept] = useState<DepartmentFilter>("Both");
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
 
   const forecastQ = useForecast(horizon);
   const metricsQ = useMetrics();
@@ -21,6 +22,15 @@ const Index = () => {
     pingApi().then(setApiOnline);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
+
+  const handleRefresh = useCallback(() => {
+    forecastQ.refetch();
+    metricsQ.refetch();
+  }, [forecastQ, metricsQ]);
+
   const filteredDepts =
     forecastQ.data?.departments.filter(
       (d) => dept === "Both" || d.name === dept,
@@ -28,23 +38,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar apiOnline={apiOnline} />
+      <Navbar
+        apiOnline={apiOnline}
+        darkMode={darkMode}
+        onToggleDarkMode={() => setDarkMode((v) => !v)}
+      />
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Pathogen Risk Forecast
-          </h1>
-          <p className="text-muted-foreground">
-            7-day CFU/g predictions across AIML and Biotech wastewater samples,
-            powered by LSTM and GRU models.
-          </p>
-        </header>
-
         <ControlsBar
           horizon={horizon}
           onHorizonChange={setHorizon}
           dept={dept}
           onDeptChange={setDept}
+          onRefresh={handleRefresh}
         />
 
         {forecastQ.isLoading ? (
@@ -55,7 +60,10 @@ const Index = () => {
           </div>
         ) : (
           <>
-            <RiskSummaryCards departments={filteredDepts} />
+            <RiskSummaryCards
+              departments={filteredDepts}
+              metrics={metricsQ.data}
+            />
             <ForecastChart departments={filteredDepts} horizon={horizon} />
             <AlertsTable departments={filteredDepts} />
           </>

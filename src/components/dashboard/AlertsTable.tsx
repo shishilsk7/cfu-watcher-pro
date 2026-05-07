@@ -14,12 +14,21 @@ export const AlertsTable = ({
 
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2">
-        <AlertTriangle className="h-5 w-5 text-alert" />
-        <h2 className="text-lg font-semibold">Risk Alerts</h2>
-        <span className="ml-auto rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
-          {alerts.length}
-        </span>
+      <div className="mb-4 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-alert" />
+            <h2 className="text-lg font-semibold">Upcoming Alert Days</h2>
+            {alerts.length > 0 && (
+              <span className="rounded-full bg-alert px-2.5 py-0.5 text-xs font-semibold text-white">
+                {alerts.length} Alerts
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Forecast days exceeding safety thresholds
+          </p>
+        </div>
       </div>
 
       {alerts.length === 0 ? (
@@ -33,10 +42,10 @@ export const AlertsTable = ({
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-4 font-medium">Day</th>
                 <th className="py-2 pr-4 font-medium">Department</th>
-                <th className="py-2 pr-4 font-medium">LSTM</th>
-                <th className="py-2 pr-4 font-medium">GRU</th>
+                <th className="py-2 pr-4 font-medium">LSTM CFU/g</th>
+                <th className="py-2 pr-4 font-medium">GRU CFU/g</th>
                 <th className="py-2 pr-4 font-medium">Threshold</th>
-                <th className="py-2 pr-4 font-medium">Δ</th>
+                <th className="py-2 pr-4 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -72,8 +81,10 @@ export const AlertsTable = ({
                   <td className="py-3 pr-4 tabular-nums text-muted-foreground">
                     {a.threshold.toLocaleString()}
                   </td>
-                  <td className="py-3 pr-4 font-medium text-alert tabular-nums">
-                    +{(a.gru - a.threshold).toLocaleString()}
+                  <td className="py-3 pr-4">
+                    <span className="rounded-full bg-alert/10 px-2.5 py-0.5 text-xs font-semibold text-alert">
+                      Alert
+                    </span>
                   </td>
                 </tr>
               ))}

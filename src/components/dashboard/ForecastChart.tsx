@@ -11,6 +11,12 @@ import {
 } from "recharts";
 import type { DepartmentForecast } from "@/types/forecast";
 
+const AIML_COLOR = "hsl(var(--aiml))";
+const BIOTECH_COLOR = "hsl(var(--biotech))";
+
+const colorFor = (name: string) =>
+  name === "AIML" ? AIML_COLOR : BIOTECH_COLOR;
+
 export const ForecastChart = ({
   departments,
   horizon,
@@ -31,30 +37,14 @@ export const ForecastChart = ({
     return row;
   });
 
-  const colorFor = (name: string) =>
-    name === "AIML" ? "hsl(var(--aiml))" : "hsl(var(--biotech))";
-
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <div className="text-sm text-muted-foreground">
-            {horizon}-Day CFU/g Forecast
-          </div>
-          <div className="text-lg font-semibold">
-            LSTM vs GRU Model Comparison
-          </div>
+      <div className="mb-4">
+        <div className="text-sm text-muted-foreground">
+          {horizon}-Day CFU/g Forecast
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-3 text-xs text-muted-foreground">
-          {departments.map((d) => (
-            <span key={d.name} className="flex items-center gap-1.5">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ background: colorFor(d.name) }}
-              />
-              {d.name}
-            </span>
-          ))}
+        <div className="text-lg font-semibold">
+          7-Day CFU/g Forecast – LSTM vs GRU Model Comparison
         </div>
       </div>
       <div className="h-80 w-full">
@@ -112,6 +102,7 @@ export const ForecastChart = ({
                 key={`${d.name}-lstm`}
                 type="monotone"
                 dataKey={`${d.name} LSTM`}
+                name={`${d.name} LSTM`}
                 stroke={colorFor(d.name)}
                 strokeWidth={2.5}
                 dot={{ r: 3 }}
@@ -121,6 +112,7 @@ export const ForecastChart = ({
                 key={`${d.name}-gru`}
                 type="monotone"
                 dataKey={`${d.name} GRU`}
+                name={`${d.name} GRU`}
                 stroke={colorFor(d.name)}
                 strokeDasharray="5 4"
                 strokeWidth={2.5}
