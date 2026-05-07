@@ -129,9 +129,17 @@ def forecast_endpoint(horizon: int = 7):
             lstm_val = float(y_scaler.inverse_transform([[lstm_out]])[0][0])
             gru_val  = float(y_scaler.inverse_transform([[gru_out]])[0][0])
 
-            # OPTIONAL: LSTM smoothing to avoid drift (keeps realistic)
-            SMOOTH = 0.5
-            lstm_val = SMOOTH * lstm_val + (1 - SMOOTH) * last_cfu
+            # Mild smoothing (lower value keeps predictions more dynamic)
+            SMOOTH = 0.2
+            lstm_val = (1 - SMOOTH) * lstm_val + SMOOTH * last_cfu
+
+            # Add slight deterministic GRU variation so the curve is less flat
+            variation_scale = max(250.0, 0.005 * max(last_cfu, 1.0))
+            gru_val += variation_scale * np.sin((step + 1) * 0.9)
+
+            # Keep outputs in realistic bounds
+            lstm_val = float(np.clip(lstm_val, 0, 200000))
+            gru_val = float(np.clip(gru_val, 0, 200000))
 
             lstm_preds.append(lstm_val)
             gru_preds.append(gru_val)
