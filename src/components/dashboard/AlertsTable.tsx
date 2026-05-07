@@ -1,6 +1,12 @@
 import type { DepartmentForecast } from "@/types/forecast";
 import { AlertTriangle } from "lucide-react";
 
+const formatCalendarDate = (dayOffset: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + dayOffset - 1);
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+};
+
 export const AlertsTable = ({
   departments,
 }: {
@@ -54,7 +60,12 @@ export const AlertsTable = ({
                   key={i}
                   className="border-b last:border-0 hover:bg-accent/40"
                 >
-                  <td className="py-3 pr-4 font-medium">Day {a.day}</td>
+                  <td className="py-3 pr-4 font-medium">
+                    Day {a.day_offset}
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">
+                      · {formatCalendarDate(a.day_offset)}
+                    </span>
+                  </td>
                   <td className="py-3 pr-4">
                     <span
                       className="rounded-full px-2 py-0.5 text-xs font-medium"
