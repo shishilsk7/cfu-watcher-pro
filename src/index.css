@@ -37,6 +37,38 @@
     --radius: 0.85rem;
   }
 
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 96%;
+
+    --primary: 221 83% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 47% 16%;
+    --secondary-foreground: 210 40% 96%;
+
+    --muted: 222 47% 16%;
+    --muted-foreground: 215 20% 60%;
+
+    --accent: 222 47% 20%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 47% 20%;
+    --input: 222 47% 20%;
+    --ring: 221 83% 60%;
+
+    --aiml: 221 83% 65%;
+    --biotech: 175 70% 45%;
+    --alert: 0 72% 55%;
+    --safe: 160 70% 48%;
+  }
+
   * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
