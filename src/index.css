@@ -10,7 +10,7 @@
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
-    --primary: 217 91% 55%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
@@ -27,12 +27,12 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 217 91% 55%;
+    --ring: 221 83% 53%;
 
-    --aiml: 217 91% 55%;
-    --biotech: 165 70% 40%;
+    --aiml: 221 83% 53%;
+    --biotech: 175 84% 32%;
     --alert: 0 84% 60%;
-    --safe: 142 71% 42%;
+    --safe: 160 84% 39%;
 
     --radius: 0.85rem;
   }
@@ -40,6 +40,6 @@
   * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
 }
