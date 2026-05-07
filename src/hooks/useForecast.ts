@@ -27,7 +27,7 @@ function mockForecast(horizon: number): ForecastResponse {
     units: "CFU/g",
     departments: [
       make("AIML", 52000, 85000),
-      make("Biotech", 96000, 85000),
+      make("Biotech", 96000, 90000),
     ],
   };
 }
