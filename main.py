@@ -87,7 +87,7 @@ async def get_metrics():
 def forecast_endpoint(horizon: int = 7):
 
     DEPT_THRESHOLDS = {"AIML": 60000, "Biotech": 115000}  # Per-department safety thresholds
-    DEFAULT_THRESHOLD = DEPT_THRESHOLDS["AIML"]
+    DEFAULT_THRESHOLD = 60000
 
     # Load dataset
     df = pd.read_csv(DATA_PATH)
