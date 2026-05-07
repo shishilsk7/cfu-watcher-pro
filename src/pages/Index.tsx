@@ -56,11 +56,7 @@ const Index = () => {
         ) : (
           <>
             <RiskSummaryCards departments={filteredDepts} />
-            <div className="grid grid-cols-1 gap-6">
-              {filteredDepts.map((d) => (
-                <ForecastChart key={d.name} dept={d} />
-              ))}
-            </div>
+            <ForecastChart departments={filteredDepts} horizon={horizon} />
             <AlertsTable departments={filteredDepts} />
           </>
         )}
