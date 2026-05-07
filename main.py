@@ -81,6 +81,15 @@ def forecast_endpoint(horizon: int = 7):
 
     # Identify departments from dataset
     departments = ["AIML", "Biotech"]
+    SMOOTH = 0.2
+    MIN_VARIATION_SCALE = 250.0
+    VARIATION_FACTOR = 0.005
+    LSTM_VARIATION_FREQUENCY = 0.7
+    GRU_VARIATION_FREQUENCY = 0.9
+    LSTM_VARIATION_SCALE = 0.6
+    MIN_LAST_CFU = 1.0
+    MIN_CFU = 0.0
+    MAX_CFU = 200000.0
 
     results = []
 
@@ -119,14 +128,6 @@ def forecast_endpoint(horizon: int = 7):
         base_env["Sample"] = 0 if dept == "AIML" else 1
 
         last_day = int(dept_df["Day"].max())
-        SMOOTH = 0.2
-        MIN_VARIATION_SCALE = 250.0
-        VARIATION_FACTOR = 0.005
-        LSTM_VARIATION_FREQUENCY = 0.7
-        GRU_VARIATION_FREQUENCY = 0.9
-        MIN_CFU = 0.0
-        MAX_CFU = 200000.0
-
         for step in range(horizon):
 
             # Predict next CFU_g
@@ -140,8 +141,8 @@ def forecast_endpoint(horizon: int = 7):
             lstm_val = SMOOTH * lstm_val + (1 - SMOOTH) * last_cfu
 
             # Add slight deterministic variation so lines are not overly flat
-            variation_scale = max(MIN_VARIATION_SCALE, VARIATION_FACTOR * max(last_cfu, 1.0))
-            lstm_val += 0.6 * variation_scale * np.sin((step + 1) * LSTM_VARIATION_FREQUENCY)
+            variation_scale = max(MIN_VARIATION_SCALE, VARIATION_FACTOR * max(last_cfu, MIN_LAST_CFU))
+            lstm_val += LSTM_VARIATION_SCALE * variation_scale * np.sin((step + 1) * LSTM_VARIATION_FREQUENCY)
             gru_val += variation_scale * np.sin((step + 1) * GRU_VARIATION_FREQUENCY)
 
             # Keep outputs in realistic bounds
