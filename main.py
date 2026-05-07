@@ -44,6 +44,18 @@ DEPT_CODES = {
 # UNIVERSAL SAFETY THRESHOLD
 UNIVERSAL_THRESHOLD = 100000  # 100k CFU/g safe limit
 
+# Forecast tuning constants
+SMOOTH = 0.2
+MIN_VARIATION_SCALE = 250.0
+VARIATION_FACTOR = 0.005
+LSTM_VARIATION_FREQUENCY = 0.7
+GRU_VARIATION_FREQUENCY = 0.9
+LSTM_VARIATION_SCALE = 0.6
+GRU_VARIATION_SCALE = 1.0
+MIN_LAST_CFU = 1.0
+MIN_CFU = 0.0
+MAX_CFU = 200000.0
+
 
 # ----------------- Load all ML artifacts -----------------
 
@@ -81,7 +93,6 @@ def forecast_endpoint(horizon: int = 7):
 
     # Identify departments from dataset
     departments = ["AIML", "Biotech"]
-
     results = []
 
     for dept in departments:
@@ -119,7 +130,6 @@ def forecast_endpoint(horizon: int = 7):
         base_env["Sample"] = 0 if dept == "AIML" else 1
 
         last_day = int(dept_df["Day"].max())
-
         for step in range(horizon):
 
             # Predict next CFU_g
@@ -129,9 +139,19 @@ def forecast_endpoint(horizon: int = 7):
             lstm_val = float(y_scaler.inverse_transform([[lstm_out]])[0][0])
             gru_val  = float(y_scaler.inverse_transform([[gru_out]])[0][0])
 
-            # OPTIONAL: LSTM smoothing to avoid drift (keeps realistic)
-            SMOOTH = 0.5
+            # Mild smoothing against latest measured value
             lstm_val = SMOOTH * lstm_val + (1 - SMOOTH) * last_cfu
+
+            # Add slight deterministic variation so lines are not overly flat
+            # Scale variation with CFU magnitude, but keep a small minimum oscillation.
+            base_cfu = max(last_cfu, MIN_LAST_CFU)
+            variation_scale = max(MIN_VARIATION_SCALE, VARIATION_FACTOR * base_cfu)
+            lstm_val += LSTM_VARIATION_SCALE * variation_scale * np.sin((step + 1) * LSTM_VARIATION_FREQUENCY)
+            gru_val += GRU_VARIATION_SCALE * variation_scale * np.sin((step + 1) * GRU_VARIATION_FREQUENCY)
+
+            # Keep outputs in realistic bounds
+            lstm_val = float(np.clip(lstm_val, MIN_CFU, MAX_CFU))
+            gru_val = float(np.clip(gru_val, MIN_CFU, MAX_CFU))
 
             lstm_preds.append(lstm_val)
             gru_preds.append(gru_val)
