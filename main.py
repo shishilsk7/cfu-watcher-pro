@@ -86,7 +86,7 @@ async def get_metrics():
 @app.get("/forecast")
 def forecast_endpoint(horizon: int = 7):
 
-    DEPT_THRESHOLDS = {"AIML": 60000, "Biotech": 115000}  # Per-department safety thresholds
+    DEPT_THRESHOLDS = {"AIML": 54100, "Biotech": 108100}  # Per-department safety thresholds
     DEFAULT_THRESHOLD = min(DEPT_THRESHOLDS.values())
 
     # Load dataset
