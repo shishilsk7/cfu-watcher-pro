@@ -16,10 +16,13 @@ from src.lstm_model import build_lstm
 FEATURES = ["Day", "Sample", "Colonies", "Temperature", "pH", "Turbidity"]
 TARGET = "CFU_g"
 DEPARTMENTS = ["AIML", "Biotech"]
+DEPT_ENCODING = {"AIML": 0, "Biotech": 1}
 WINDOW_SIZE = 7
 HORIZON = 1
 NEW_ROWS_PER_DEPT = 62  # ~60-65 rows per department
 RANDOM_SEED = 42
+MAX_EPOCHS = 50
+BATCH_SIZE = 16
 
 BASELINES = {
     "lstm": {"MAE": 7623, "RMSE": 10217, "R2": 0.871},
@@ -51,10 +54,6 @@ def get_dept_stats(df: pd.DataFrame) -> dict:
     return stats
 
 
-def smooth_step(previous: float, candidate: float, alpha: float = 0.35) -> float:
-    return float(previous + alpha * (candidate - previous))
-
-
 def signed_noise(min_pct: float, max_pct: float) -> float:
     pct = np.random.uniform(min_pct, max_pct)
     return float(pct if np.random.rand() > 0.5 else -pct)
@@ -78,27 +77,25 @@ def generate_for_department(dept_df: pd.DataFrame, dept_stats: DeptStats, n_rows
 
         # CFU_g: prev ±2-3%, bounded by (min*0.9, max*1.1)
         cfu_candidate = prev_cfu * (1.0 + signed_noise(0.02, 0.03))
-        cfu_candidate = smooth_step(prev_cfu, cfu_candidate)
         cfu_low = max(0.0, float(dept_stats.min["CFU_g"]) * 0.9)
         cfu_high = float(dept_stats.max["CFU_g"]) * 1.1
         next_cfu = float(np.clip(cfu_candidate, cfu_low, cfu_high))
 
         # Colonies: ±2%
-        colonies_candidate = prev_colonies * (1.0 + np.random.uniform(-0.02, 0.02))
-        colonies_candidate = smooth_step(prev_colonies, colonies_candidate)
+        colonies_candidate = prev_colonies * (1.0 + signed_noise(0.0, 0.02))
         next_colonies = max(0.0, colonies_candidate)
 
         # Temperature: ±0.5 of last value
         temp_candidate = prev_temp + np.random.uniform(-0.5, 0.5)
-        next_temp = max(0.0, smooth_step(prev_temp, temp_candidate))
+        next_temp = max(0.0, temp_candidate)
 
         # pH: ±0.05 of last value
         ph_candidate = prev_ph + np.random.uniform(-0.05, 0.05)
-        next_ph = max(0.0, smooth_step(prev_ph, ph_candidate))
+        next_ph = max(0.0, ph_candidate)
 
         # Turbidity: ±0.1 of last value
         turb_candidate = prev_turb + np.random.uniform(-0.1, 0.1)
-        next_turb = max(0.0, smooth_step(prev_turb, turb_candidate))
+        next_turb = max(0.0, turb_candidate)
 
         new_row = {
             "Day": next_day,
@@ -119,7 +116,7 @@ def generate_for_department(dept_df: pd.DataFrame, dept_stats: DeptStats, n_rows
 
 def add_windows_for_group(group_df, x_scaler, y_scaler, window_size=WINDOW_SIZE, horizon=HORIZON):
     encoded = group_df.copy()
-    encoded["Sample"] = encoded["Sample"].map({"AIML": 0, "Biotech": 1})
+    encoded["Sample"] = encoded["Sample"].map(DEPT_ENCODING)
 
     x_raw = encoded[FEATURES].astype(float).values
     y_raw = encoded[[TARGET]].astype(float).values
@@ -152,7 +149,10 @@ def build_windows(df, x_scaler, y_scaler):
     y_np = np.array(y_all)
 
     if len(X_np) == 0:
-        raise ValueError("No training/validation windows were generated.")
+        raise ValueError(
+            "No windows generated. Check that each department has at least "
+            "WINDOW_SIZE + HORIZON rows in both augmented and original datasets."
+        )
 
     return X_np, y_np
 
@@ -193,8 +193,8 @@ def train_model(model_name, X_train, y_train, X_val, y_val, y_scaler):
         X_train,
         y_train,
         validation_data=(X_val, y_val),
-        epochs=50,
-        batch_size=16,
+        epochs=MAX_EPOCHS,
+        batch_size=BATCH_SIZE,
         callbacks=callbacks,
         verbose=1,
     )
@@ -257,7 +257,7 @@ def main():
     # Retraining setup
     # Fit scalers on ORIGINAL data so saved models remain compatible with existing inference artifacts.
     scaler_base = original_df.copy()
-    scaler_base["Sample"] = scaler_base["Sample"].map({"AIML": 0, "Biotech": 1})
+    scaler_base["Sample"] = scaler_base["Sample"].map(DEPT_ENCODING)
 
     x_scaler = MinMaxScaler().fit(scaler_base[FEATURES].astype(float).values)
     y_scaler = MinMaxScaler().fit(scaler_base[[TARGET]].astype(float).values)
