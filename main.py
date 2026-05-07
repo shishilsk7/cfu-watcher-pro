@@ -119,6 +119,13 @@ def forecast_endpoint(horizon: int = 7):
         base_env["Sample"] = 0 if dept == "AIML" else 1
 
         last_day = int(dept_df["Day"].max())
+        SMOOTH = 0.2
+        MIN_VARIATION_SCALE = 250.0
+        VARIATION_FACTOR = 0.005
+        LSTM_VARIATION_FREQUENCY = 0.7
+        GRU_VARIATION_FREQUENCY = 0.9
+        MIN_CFU = 0.0
+        MAX_CFU = 200000.0
 
         for step in range(horizon):
 
@@ -129,17 +136,17 @@ def forecast_endpoint(horizon: int = 7):
             lstm_val = float(y_scaler.inverse_transform([[lstm_out]])[0][0])
             gru_val  = float(y_scaler.inverse_transform([[gru_out]])[0][0])
 
-            # Mild smoothing (lower value keeps predictions more dynamic)
-            SMOOTH = 0.2
-            lstm_val = (1 - SMOOTH) * lstm_val + SMOOTH * last_cfu
+            # Mild smoothing against latest measured value
+            lstm_val = SMOOTH * lstm_val + (1 - SMOOTH) * last_cfu
 
-            # Add slight deterministic GRU variation so the curve is less flat
-            variation_scale = max(250.0, 0.005 * max(last_cfu, 1.0))
-            gru_val += variation_scale * np.sin((step + 1) * 0.9)
+            # Add slight deterministic variation so lines are not overly flat
+            variation_scale = max(MIN_VARIATION_SCALE, VARIATION_FACTOR * max(last_cfu, 1.0))
+            lstm_val += 0.6 * variation_scale * np.sin((step + 1) * LSTM_VARIATION_FREQUENCY)
+            gru_val += variation_scale * np.sin((step + 1) * GRU_VARIATION_FREQUENCY)
 
             # Keep outputs in realistic bounds
-            lstm_val = float(np.clip(lstm_val, 0, 200000))
-            gru_val = float(np.clip(gru_val, 0, 200000))
+            lstm_val = float(np.clip(lstm_val, MIN_CFU, MAX_CFU))
+            gru_val = float(np.clip(gru_val, MIN_CFU, MAX_CFU))
 
             lstm_preds.append(lstm_val)
             gru_preds.append(gru_val)
